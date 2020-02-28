@@ -82,12 +82,15 @@ assert len(stratum_submit['params']) == 6
 
 extranonce = (nonce1 + nonce2 + b'\x00' * extranonce_length)[:extranonce_length]
 
-padding = bytes(previousblockhash[i] ^ treeroot[i] for i in range(32))
+def xorbytes(x, y):
+    return bytes(bytearray(a ^ b for a, b in zip(bytearray(x), bytearray(y))))
+
+padding = xorbytes(previousblockhash, treeroot)
 subhash = blake32(extranonce + reservedroot + witnessroot + merkleroot + version + bits)
 maskhash = blake32(previousblockhash + mask)
 commithash = blake32(subhash + maskhash)
 prehead = nonce + ntime + b'\x00' * 4 + padding[:20] + previousblockhash + treeroot + commithash
 sharehash = blake32(blake64(prehead) + padding[:32] + sha3(prehead + padding[:8]))
-powhash = bytes(sharehash[i] ^ mask[i] for i in range(32))
+powhash = xorbytes(sharehash, mask)
 print(to_hex(powhash))
 
